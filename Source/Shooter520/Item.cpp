@@ -88,13 +88,31 @@ void AItem::ResetPulseTimer()
 
 void AItem::UpdatePulse()
 {
-	if(ItemState != EItemState::EIS_Pickup)	return;
+	float ElapsedTime;
+	FVector CurveValue;
 
-	const float ElapsedTime = GetWorldTimerManager().GetTimerElapsed(PulseTimer);
-	if(PulseCurve)
+	switch (ItemState)
 	{
-		const FVector CurveValue = PulseCurve->GetVectorValue(ElapsedTime);
-		
+	case EItemState::EIS_Pickup:
+		if (PulseCurve)
+		{
+			ElapsedTime = GetWorldTimerManager().GetTimerElapsed(PulseTimer);
+			CurveValue = PulseCurve->GetVectorValue(ElapsedTime);
+		}
+		break;
+	case EItemState::EIS_EquipInterping:
+		if (InterpPulseCurve)
+		{
+			ElapsedTime = GetWorldTimerManager().GetTimerElapsed(ItemInterpTimer);
+			CurveValue = InterpPulseCurve->GetVectorValue(ElapsedTime);
+		}
+		break;
+	default:
+		return;
+	}
+
+	if (DynamicMaterialInstance)
+	{
 		DynamicMaterialInstance->SetScalarParameterValue(TEXT("GlowAmount"), CurveValue.X * GlowAmount);
 		DynamicMaterialInstance->SetScalarParameterValue(TEXT("FresnelExponent"), CurveValue.X * FresnelExponent);
 		DynamicMaterialInstance->SetScalarParameterValue(TEXT("FresnelReflectFraction"), CurveValue.X * FresnelReflectFraction);
@@ -271,6 +289,7 @@ void AItem::FinishInterping()
 	{
 		Character->IncrementInterpLocItemCount(InterpLocIndex, -1);
 		Character->GetPickupItem(this);
+		SetItemState(EItemState::EIS_Pickup);
 	}
 	bInterping = false;
 	SetActorScale3D(FVector(1.0f));
@@ -292,6 +311,7 @@ void AItem::StartItemCurve(AShooterCharacter* Char)
 	ItemInterpStartLocation = GetActorLocation();
 	bInterping = true;
 	SetItemState(EItemState::EIS_EquipInterping);
+	GetWorldTimerManager().ClearTimer(PulseTimer);
 
 	GetWorldTimerManager().SetTimer(ItemInterpTimer, this, &AItem::FinishInterping, ZCurveTime);
 
