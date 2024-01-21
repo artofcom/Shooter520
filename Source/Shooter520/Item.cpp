@@ -295,8 +295,8 @@ void AItem::StartItemCurve(AShooterCharacter* Char)
 
 	GetWorldTimerManager().SetTimer(ItemInterpTimer, this, &AItem::FinishInterping, ZCurveTime);
 
-	const float CameraRotationYaw { Character->GetFollowCamera()->GetComponentRotation().Yaw };
-	const float ItemRotationYaw { GetActorRotation().Yaw };
+	const float CameraRotationYaw = Character->GetFollowCamera()->GetComponentRotation().Yaw;
+	const float ItemRotationYaw = GetActorRotation().Yaw;
 	InterpInitialYawOffset = ItemRotationYaw - CameraRotationYaw;
 
 	bCanChangeCustomDepth = false;
