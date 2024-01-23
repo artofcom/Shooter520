@@ -76,7 +76,7 @@ void AItem::BeginPlay()
 
 void AItem::StartPulseTimer()
 {
-	if(ItemState == EItemState::EIS_PickedUp)
+	if(ItemState == EItemState::EIS_Pickup)
 	{
 		GetWorldTimerManager().SetTimer(PulseTimer, this, &AItem::ResetPulseTimer, PulseCurveTime);
 	}
@@ -114,8 +114,8 @@ void AItem::UpdatePulse()
 	if (DynamicMaterialInstance)
 	{
 		DynamicMaterialInstance->SetScalarParameterValue(TEXT("GlowAmount"), CurveValue.X * GlowAmount);
-		DynamicMaterialInstance->SetScalarParameterValue(TEXT("FresnelExponent"), CurveValue.X * FresnelExponent);
-		DynamicMaterialInstance->SetScalarParameterValue(TEXT("FresnelReflectFraction"), CurveValue.X * FresnelReflectFraction);
+		DynamicMaterialInstance->SetScalarParameterValue(TEXT("FresnelExponent"), CurveValue.Y * FresnelExponent);
+		DynamicMaterialInstance->SetScalarParameterValue(TEXT("FresnelReflectFraction"), CurveValue.Z * FresnelReflectFraction);
 	}
 }
 void AItem::OnConstruction(const FTransform& Transform)
