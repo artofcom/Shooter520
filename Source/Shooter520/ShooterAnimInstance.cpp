@@ -19,7 +19,7 @@ UShooterAnimInstance::UShooterAnimInstance() :
  TIPCharacterYawLastFrame(.0f),
  RootYawOffset(.0f),
  Pitch(.0f),
- bReloading(false), 
+ bReloading(false),
  OffsetState(EOffsetState::EOS_Hip),
  CharacterRotation(FRotator(.0f)),
  CharacterRotationLastFrame(FRotator(.0f)),
@@ -48,6 +48,7 @@ void UShooterAnimInstance::UpdateAnimationProperties(float DeltaTime)
     {
         bCrouching = ShooterCharacter->GetCrouching();
         bReloading = ShooterCharacter->GetCombatState()==ECombatState::ECS_Reloading;
+        bEquipping = ShooterCharacter->GetCombatState()==ECombatState::ECS_Equipping;
 
         FVector Velocity{ ShooterCharacter->GetVelocity()} ;
         Velocity.Z = .0f;
@@ -150,7 +151,7 @@ void UShooterAnimInstance::TurnInPlace()
     // Recoil weight check.
     if(bTurningInPlace)
     {
-        if(bReloading)
+        if(bReloading || bEquipping)
             RecoilWeight = 1.0f;
         else 
             RecoilWeight = .0f;
@@ -159,14 +160,14 @@ void UShooterAnimInstance::TurnInPlace()
     {
         if(bCrouching)
         {
-            if(bReloading)
+            if(bReloading || bEquipping)
                 RecoilWeight = 1.0f;
             else 
                 RecoilWeight = 0.1f;
         }
         else 
         {
-            if(bAiming || bReloading)
+            if(bAiming || bReloading || bEquipping)
                 RecoilWeight = 1.0f;
             else 
                 RecoilWeight = 0.5f;

@@ -13,6 +13,7 @@ enum class ECombatState : uint8
 	ECS_Unoccupied UMETA(DisplayName="Unoccupied"),
 	ECS_FireTimerInProgress UMETA(DisplayName="FireTimerInProgress"),
 	ECS_Reloading UMETA(DisplayName="Reloading"),
+	ECS_Equipping UMETA(DisplayName="Equipping"),
 	
 	ECS_MAX UMETA(DisplayName="Default MAX")
 };
@@ -28,6 +29,9 @@ struct FInterpLocation
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	int32 ItemCount;
 };
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FEquipItemDelegate, int32, CurrentSlotIndex, int32, NewSlotIndex);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FHighlightIconDelegate, int32, SlotIndex, bool, bStartAnimation);
 
 UCLASS()
 class SHOOTER520_API AShooterCharacter : public ACharacter
@@ -84,7 +88,7 @@ protected:
 	void TraceForItems();
 
 	class AWeapon* SpawnDefaultWeapon();
-	void EquipWeapon(AWeapon* WeaponToEquip);
+	void EquipWeapon(AWeapon* WeaponToEquip, bool bSwapping=false);
 
 	void DropWeapon();
 
@@ -125,6 +129,19 @@ protected:
 	void PickupAmmo(class AAmmo* Ammo);
 
 	void InitializeInterpLocations();
+
+	void FKeyPressed();
+	void OneKeyPressed();
+	void TwoKeyPressed();
+	void ThreeKeyPressed();
+	void FourKeyPressed();
+	void FiveKeyPressed();
+
+	void ExchangeInventoryItems(int32 CurrentItemIndex, int32 NewItemIndex);
+
+	int32 GetEmptyInventorySlot();
+
+	void HighlightInventorySlot();
 
 private:
 
@@ -262,8 +279,14 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	UAnimMontage* ReloadMontage;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* EquipMontage;
+
 	UFUNCTION(BlueprintCallable)
 	void FinishReloading();
+
+	UFUNCTION(BlueprintCallable)
+	void FinishEquipping();
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	FTransform ClipTransform;
@@ -341,6 +364,15 @@ private:
 	
 	const int32 INVENTORY_CAPACITY = 6;
 
+	UPROPERTY(BlueprintAssignable, Category = Delegates, meta = (AllowPrivateAccess = "true"))
+	FEquipItemDelegate EquipItemDelegate;
+
+	UPROPERTY(BlueprintAssignable, Category = Delegates, meta = (AllowPrivateAccess = "true"))
+	FHighlightIconDelegate HighlightIconDelegate;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Inventory, meta = (AllowPrivateAccess = "true"))
+	int32 HighlightedSlot;
+
 public:
 
 	FORCEINLINE USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
@@ -373,4 +405,6 @@ public:
 	FORCEINLINE bool ShouldPlayEquipSound() const {return bShouldPlayEquipSound; }
 	void StartPickupSoundTimer();
 	void StartEquipSoundTimer();
+	
+	void UnHighlightInventorySlot();
 };

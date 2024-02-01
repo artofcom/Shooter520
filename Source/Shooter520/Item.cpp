@@ -35,7 +35,9 @@ AItem::AItem() :
 	PulseCurveTime(5.0f),
 	GlowAmount(150.0f),
 	FresnelExponent(3.0f),
-	FresnelReflectFraction(4.0f)
+	FresnelReflectFraction(4.0f),
+	SlotIndex(0), 
+	bCharacterInventoryFull(false)
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -152,6 +154,7 @@ void AItem::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent,
 		if(ShooterCharacter)
 		{
 			ShooterCharacter->IncrementOverlappedItemCount(-1);
+			ShooterCharacter->UnHighlightInventorySlot();
 		}
 	}
 }
@@ -202,6 +205,21 @@ void AItem::SetItemProperties(EItemState state)
 		break;
 
 	case EItemState::EIS_PickedUp:
+
+		PickupWidget->SetVisibility(false);
+
+		ItemMesh->SetEnableGravity(false);
+		ItemMesh->SetSimulatePhysics(false);
+		ItemMesh->SetVisibility(false);
+		ItemMesh->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		ItemMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		AreaSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		AreaSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		CollisionBox->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Ignore);
+		CollisionBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
 		break;
 
 	case EItemState::EIS_Equipped:
@@ -226,6 +244,7 @@ void AItem::SetItemProperties(EItemState state)
 		ItemMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 		ItemMesh->SetCollisionResponseToChannel(ECollisionChannel::ECC_WorldStatic, ECollisionResponse::ECR_Block);
 		ItemMesh->SetEnableGravity(true);
+		ItemMesh->SetVisibility(true);
 
 		AreaSphere->SetCollisionResponseToAllChannels(ECollisionResponse::ECR_Overlap);
 		AreaSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
@@ -289,7 +308,8 @@ void AItem::FinishInterping()
 	{
 		Character->IncrementInterpLocItemCount(InterpLocIndex, -1);
 		Character->GetPickupItem(this);
-		SetItemState(EItemState::EIS_Pickup);
+
+		Character->UnHighlightInventorySlot();
 	}
 	bInterping = false;
 	SetActorScale3D(FVector(1.0f));
@@ -299,14 +319,14 @@ void AItem::FinishInterping()
 	DisableCustomDepth();
 }
 
-void AItem::StartItemCurve(AShooterCharacter* Char)
+void AItem::StartItemCurve(AShooterCharacter* Char, bool bForcePlaySound)
 {
 	Character = Char;
 
 	InterpLocIndex = Character->GetInterpLocationIndex();
 	Character->IncrementInterpLocItemCount(InterpLocIndex, 1);
 
-	PlayPickupSound();
+	PlayPickupSound(bForcePlaySound);
 	
 	ItemInterpStartLocation = GetActorLocation();
 	bInterping = true;
@@ -322,11 +342,16 @@ void AItem::StartItemCurve(AShooterCharacter* Char)
 	bCanChangeCustomDepth = false;
 }
 
-void AItem::PlayPickupSound()
+void AItem::PlayPickupSound(bool bForcePlaySound)
 {
 	if(Character)
 	{
-		if(Character->ShouldPlayPickupSound())
+		if(bForcePlaySound)
+		{
+			if(PickupSound)
+				UGameplayStatics::PlaySound2D(this, PickupSound);
+		}
+		else if(Character->ShouldPlayPickupSound())
 		{
 			Character->StartPickupSoundTimer();
 			if(PickupSound)
@@ -334,15 +359,23 @@ void AItem::PlayPickupSound()
 		}
 	}
 }
-void AItem::PlayEquipSound()
+void AItem::PlayEquipSound(bool bForcePlaySound)
 {
 	if(Character)
 	{
-		if(Character->ShouldPlayEquipSound())
+		if(bForcePlaySound)
 		{
-			Character->StartEquipSoundTimer();
 			if(EquipSound)
 				UGameplayStatics::PlaySound2D(this, EquipSound);
+		}
+		else 
+		{
+			if(Character->ShouldPlayEquipSound())
+			{
+				Character->StartEquipSoundTimer();
+				if(EquipSound)
+					UGameplayStatics::PlaySound2D(this, EquipSound);
+			}
 		}
 	}
 }

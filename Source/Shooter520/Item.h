@@ -76,7 +76,7 @@ protected:
 
 	FVector GetInterpLocation();
 
-	void PlayPickupSound();
+	void PlayPickupSound(bool bForcePlaySound = false);
 
 	virtual void InitializeCustomDepth();
 
@@ -93,7 +93,7 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	void PlayEquipSound();
+	void PlayEquipSound(bool bForcePlaySound = false);
 
 private:
 
@@ -205,6 +205,14 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Inventory, meta = (AllowPrivateAccess = "true"))
 	UTexture2D* IconItem;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Inventory, meta = (AllowPrivateAccess = "true"))
+	UTexture2D* AmmoIcon;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Inventory, meta = (AllowPrivateAccess = "true"))
+	int32 SlotIndex;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Inventory, meta = (AllowPrivateAccess = "true"))
+	bool bCharacterInventoryFull;
 
 public:
 
@@ -219,8 +227,12 @@ public:
 	FORCEINLINE USoundCue* GetEquipSound() const { return EquipSound; }
 
 	FORCEINLINE int32 GetItemCount() const { return ItemCount; }
+	FORCEINLINE int32 GetSlotIndex() const { return SlotIndex; }
+	FORCEINLINE void SetSlotIndex(int32 Index) { SlotIndex = Index; }
+	FORCEINLINE void SetCharacter(AShooterCharacter* Char) { Character = Char; }
+	FORCEINLINE void SetCharacterInventoryFull(bool bFull) { bCharacterInventoryFull = bFull; }
 
-	void StartItemCurve(AShooterCharacter* Char);
+	void StartItemCurve(AShooterCharacter* Char, bool bForcePlaySound = false);
 
 	virtual void EnableCustomDepth();
 	virtual void DisableCustomDepth();
