@@ -5,27 +5,31 @@
 #include "ShooterCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
-#include <future>
+#include "Weapon.h"
+#include "WeaponType.h"
+//#include <future>
 
 
 UShooterAnimInstance::UShooterAnimInstance() : 
- Speed(.0f),
- bIsInAir(false),
- bIsAccelerating(false),
- MovementOffsetYaw(.0f),
- LastMovementOffsetYaw(.0f),
- bAiming(false),
- TIPCharacterYaw(.0f),
- TIPCharacterYawLastFrame(.0f),
- RootYawOffset(.0f),
- Pitch(.0f),
- bReloading(false),
- OffsetState(EOffsetState::EOS_Hip),
- CharacterRotation(FRotator(.0f)),
- CharacterRotationLastFrame(FRotator(.0f)),
- YawDelta(.0f),
- RecoilWeight(1.0f),
- bTurningInPlace(false)
+    Speed(.0f),
+    bIsInAir(false),
+    bIsAccelerating(false),
+    MovementOffsetYaw(.0f),
+    LastMovementOffsetYaw(.0f),
+    bAiming(false),
+    TIPCharacterYaw(.0f),
+    TIPCharacterYawLastFrame(.0f),
+    RootYawOffset(.0f),
+    Pitch(.0f),
+    bReloading(false),
+    OffsetState(EOffsetState::EOS_Hip),
+    CharacterRotation(FRotator(.0f)),
+    CharacterRotationLastFrame(FRotator(.0f)),
+    YawDelta(.0f),
+    RecoilWeight(1.0f),
+    bTurningInPlace(false),
+    EquippedWeaponType(EWeaponType::EWT_MAX),
+    bShouldUseFABRIK(false)
 {
 
 }
@@ -49,6 +53,8 @@ void UShooterAnimInstance::UpdateAnimationProperties(float DeltaTime)
         bCrouching = ShooterCharacter->GetCrouching();
         bReloading = ShooterCharacter->GetCombatState()==ECombatState::ECS_Reloading;
         bEquipping = ShooterCharacter->GetCombatState()==ECombatState::ECS_Equipping;
+        bShouldUseFABRIK =  ShooterCharacter->GetCombatState()==ECombatState::ECS_Unoccupied || 
+                            ShooterCharacter->GetCombatState()==ECombatState::ECS_FireTimerInProgress;
 
         FVector Velocity{ ShooterCharacter->GetVelocity()} ;
         Velocity.Z = .0f;
@@ -81,6 +87,11 @@ void UShooterAnimInstance::UpdateAnimationProperties(float DeltaTime)
             OffsetState = EOffsetState::EOS_Aiming;
         else 
             OffsetState = EOffsetState::EOS_Hip;
+
+        if(ShooterCharacter->GetEquippedWeapon())
+        {
+            EquippedWeaponType = ShooterCharacter->GetEquippedWeapon()->GetWeaponType();
+        }
 
         TurnInPlace();
         Lean(DeltaTime);

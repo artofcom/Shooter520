@@ -59,7 +59,6 @@ AShooterCharacter::AShooterCharacter():
 
 	bFireButtonPressed(false),
 	bShouldFire(true),
-	AutomaticFireRate(0.1f), 
 
 	bShouldTraceForItems(false),
 	OverlappedItemCount(0), 
@@ -494,9 +493,13 @@ void AShooterCharacter::FireButtonReleased()
 }
 void AShooterCharacter::StartFireTimer()
 {
+	if(EquippedWeapon == NULL)
+		return;
+
+
 	CombatState = ECombatState::ECS_FireTimerInProgress;
 
-	GetWorldTimerManager().SetTimer(AutoFireTimer, this, &AShooterCharacter::AutoFireReset, AutomaticFireRate);
+	GetWorldTimerManager().SetTimer(AutoFireTimer, this, &AShooterCharacter::AutoFireReset, EquippedWeapon->GetAutoFireRate());
 }
 void AShooterCharacter::AutoFireReset()
 {
@@ -558,8 +561,8 @@ void AShooterCharacter::MoveForward(float Value)
 void AShooterCharacter::PlayFireSound()
 {
 	// Making firing sound.
-	if (FireSound != nullptr)
-		UGameplayStatics::PlaySound2D(this, FireSound);
+	if (EquippedWeapon->GetFireSound())
+		UGameplayStatics::PlaySound2D(this, EquippedWeapon->GetFireSound());
 }
 void AShooterCharacter::SendBullet()
 {
@@ -574,8 +577,8 @@ void AShooterCharacter::SendBullet()
 			//GetMesh());
 			EquippedWeapon->GetItemMesh());
 			
-		if (MuzzleFlash != nullptr)
-			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), MuzzleFlash, SocketTransform);
+		if (EquippedWeapon->GetMuzzleFlash() != NULL)
+			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), EquippedWeapon->GetMuzzleFlash(), SocketTransform);
 		
 		FVector BeamEnd;
 		bool bBeamEnd = GetBeamEndLocation(SocketTransform.GetLocation(), BeamEnd);
