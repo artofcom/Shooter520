@@ -9,6 +9,7 @@
 #include "Sound/SoundCue.h"
 #include "Engine/SkeletalMeshSocket.h"
 #include "DrawDebugHelpers.h"
+#include "WeaponType.h"
 #include "particles/particleSystemComponent.h"
 #include "Item.h"
 #include "Components/WidgetComponent.h"
@@ -402,6 +403,9 @@ void AShooterCharacter::ExchangeInventoryItems(int32 CurrentItemIndex, int32 New
 	
 	if(bCanExchangeItem)
 	{
+		if(bAiming)
+			StopAiming();
+		
 		auto OldEquippedWeapon = EquippedWeapon;
 		auto NewWeapon = Cast<AWeapon>(Inventory[NewItemIndex]);
 		EquipWeapon(NewWeapon);
@@ -424,6 +428,8 @@ void AShooterCharacter::ExchangeInventoryItems(int32 CurrentItemIndex, int32 New
 void AShooterCharacter::FinishEquipping()
 {
 	CombatState = ECombatState::ECS_Unoccupied;
+	if(bAimingButtonPressed)
+		Aim();
 }
 void AShooterCharacter::Jump()
 {
@@ -504,10 +510,11 @@ void AShooterCharacter::StartFireTimer()
 void AShooterCharacter::AutoFireReset()
 {
 	CombatState = ECombatState::ECS_Unoccupied;
-	
+	if(EquippedWeapon == NULL)	return;
+
 	if(WeaponHasAmmo())
 	{
-		if(bFireButtonPressed)
+		if(bFireButtonPressed && EquippedWeapon->GetAutomatic())
 		{
 			FireWeapon();
 		}
@@ -665,6 +672,11 @@ void AShooterCharacter::FireWeapon()
 		EquippedWeapon->DecrementAmmo();
 
 		StartFireTimer();
+
+		if(EquippedWeapon->GetWeaponType() == EWeaponType::EWT_Pistol)
+		{
+			EquippedWeapon->StartSlideTimer();
+		}
 	}
 	// StartCrosshairBulletFire();
 }
@@ -672,7 +684,7 @@ void AShooterCharacter::FireWeapon()
 void AShooterCharacter::AimingButtonPressed()
 {
 	bAimingButtonPressed = true;
-	if(CombatState != ECombatState::ECS_Reloading)
+	if(CombatState != ECombatState::ECS_Reloading && CombatState != ECombatState::ECS_Equipping)
 		Aim();
 }
 void AShooterCharacter::AimingButtonReleased()

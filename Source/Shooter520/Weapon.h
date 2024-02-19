@@ -85,6 +85,9 @@ struct FWeaponDataTable : public FTableRowBase
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FName BoneToHide;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bAutomatic;
+
 };
 
 /**
@@ -106,6 +109,10 @@ protected:
 	virtual void OnConstruction(const FTransform& Transform) override;
 
 	virtual void BeginPlay() override;
+
+	void FinishMovingSlide();
+
+	void UpdateSlideDisplament();
 
 private:
 	FTimerHandle ThrowWeaponTimer;
@@ -167,6 +174,34 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=DataTable, meta=(AllowPrivateAccess="true"))
 	FName BoneToHide;
 
+
+	// Pistol Sliding.
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Pistol, meta=(AllowPrivateAccess="true"))
+	float SlideDisplacement;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category=Pistol, meta=(AllowPrivateAccess="true"))
+	UCurveFloat* SlideDisplacementCurve;
+
+	FTimerHandle SlideTimer;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category=Pistol, meta=(AllowPrivateAccess="true"))
+	float SlideDisplacementTime;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Pistol, meta=(AllowPrivateAccess="true"))
+	bool bMovingSlide;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category=Pistol, meta=(AllowPrivateAccess="true"))
+	float MaxSlideDisplacement;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category=Pistol, meta=(AllowPrivateAccess="true"))
+	float MaxRecoilRatation;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Pistol, meta=(AllowPrivateAccess="true"))
+	float RecoilRotation;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category="Weapon Properties", meta=(AllowPrivateAccess="true"))
+	bool bAutomatic;
+
 public:
 
 	void ThrowWeapon();
@@ -185,6 +220,9 @@ public:
 	FORCEINLINE float GetAutoFireRate() const { return AutoFireRate; }
 	FORCEINLINE UParticleSystem* GetMuzzleFlash() const { return MuzzleFlash; }
 	FORCEINLINE USoundCue* GetFireSound() const { return FireSound; }
+	FORCEINLINE bool GetAutomatic() const { return bAutomatic; }
+
+	void StartSlideTimer();
 
 	void ReloadAmmo(int32 ammount);
 	FORCEINLINE void SetMovingClip(bool Move) { bMovingClip = Move; }
