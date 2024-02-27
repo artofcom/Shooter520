@@ -17,6 +17,8 @@
 #include "Components/SphereComponent.h"
 #include "Components/BoxComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "PhysicalMaterials/PhysicalMaterial.h"
+#include "Shooter520.h"
 #include <utility>
 #include "Ammo.h"
 
@@ -1156,4 +1158,27 @@ void AShooterCharacter::StartEquipSoundTimer()
 {
 	bShouldPlayEquipSound = true;
 	GetWorldTimerManager().SetTimer(EquipSoundTimer, this, &AShooterCharacter::ResetEquipSoundTimer, EquipSoundResetTime);
+}
+
+
+EPhysicalSurface AShooterCharacter::GetSurfaceType()
+{
+	FHitResult HitResult;
+	const FVector Start = GetActorLocation();
+	const FVector End = Start + FVector(.0f, .0f, -400.0f);
+	FCollisionQueryParams QueryParam;
+	QueryParam.bReturnPhysicalMaterial = true;
+
+	GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECollisionChannel::ECC_Visibility, QueryParam);
+
+	//if(HitResult.GetActor())
+	//	UE_LOG(LogTemp, Warning, TEXT("Hit Actor : %s"), *HitResult.GetActor()->GetName());
+	/*
+	auto HitSurface = HitResult.PhysMaterial->SurfaceType;
+	if(HitSurface == EPS_Grass)
+	{
+		// UE_LOG(LogTemp, Warning, TEXT("Hit Grass SurfaceType"));
+	}*/
+	
+	return UPhysicalMaterial::DetermineSurfaceType(HitResult.PhysMaterial.Get());
 }

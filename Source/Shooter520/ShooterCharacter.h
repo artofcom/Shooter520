@@ -143,6 +143,10 @@ protected:
 
 	void HighlightInventorySlot();
 
+	UFUNCTION(BlueprintCallable)
+	EPhysicalSurface GetSurfaceType();	
+
+
 private:
 
 	// Base set up.--------------------------------------------------------//
