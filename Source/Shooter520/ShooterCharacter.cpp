@@ -21,6 +21,7 @@
 #include "Shooter520.h"
 #include <utility>
 #include "Ammo.h"
+#include "BulletHitInterface.h"
 
 //#include <future>
 
@@ -589,14 +590,27 @@ void AShooterCharacter::SendBullet()
 		if (EquippedWeapon->GetMuzzleFlash() != NULL)
 			UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), EquippedWeapon->GetMuzzleFlash(), SocketTransform);
 		
-		FVector BeamEnd;
-		bool bBeamEnd = GetBeamEndLocation(SocketTransform.GetLocation(), BeamEnd);
+		//FVector BeamEnd;
+		FHitResult BeamHitResult;
+		bool bBeamEnd = GetBeamEndLocation(SocketTransform.GetLocation(), BeamHitResult);
 		if (bBeamEnd)
 		{
-			// Hit Particle at the hit point.
-			if (ImpactParticles != nullptr)
-				UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, BeamEnd);
-			
+			// Check if this is BulletHitInterface.
+			if(BeamHitResult.GetActor() != NULL)
+			{
+				IBulletHitInterface* BulletHitInterface = Cast<IBulletHitInterface>( BeamHitResult.GetActor() );
+				if(BulletHitInterface != NULL)
+				{
+					BulletHitInterface->BulletHit_Implementation(BeamHitResult);
+				}
+			}
+			else 
+			{
+				// Hit Particle at the hit point.
+				if (ImpactParticles != nullptr)
+					UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, BeamHitResult.Location);
+			}
+
 			// Bullet Trail.
 			if (BeamParticles != nullptr)
 			{
@@ -604,7 +618,7 @@ void AShooterCharacter::SendBullet()
 				if (Beam != nullptr)
 				{
 					// Name 'Target' is from P_SmokeTrail_Faded particle.
-					Beam->SetVectorParameter(FName("Target"), BeamEnd);
+					Beam->SetVectorParameter(FName("Target"), BeamHitResult.Location);
 				}
 			}
 		}
@@ -753,8 +767,10 @@ AWeapon* AShooterCharacter::SpawnDefaultWeapon()
 	}
 	return NULL;
 }
-bool AShooterCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FVector& OutBeamLocation)
+bool AShooterCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, FHitResult& OutHitResult)
 {
+	FVector OutBeamLocation;
+
 	// Cross hair check.
 	FHitResult CrosshairHitResult;
 	bool bCrosshairHit = TraceUnderCrosshairs(CrosshairHitResult, OutBeamLocation);
@@ -766,17 +782,16 @@ bool AShooterCharacter::GetBeamEndLocation(const FVector& MuzzleSocketLocation, 
 	}
 
 	// Trace from gun barrel.
-	FHitResult WeaponTraceHit;
 	const FVector WeaponTraceStart{ MuzzleSocketLocation };
 	const FVector StartToEnd{ OutBeamLocation - MuzzleSocketLocation };
 	const FVector WeaponTraceEnd{ MuzzleSocketLocation + StartToEnd * 1.25f };
-	GetWorld()->LineTraceSingleByChannel(WeaponTraceHit, WeaponTraceStart, WeaponTraceEnd, ECollisionChannel::ECC_Visibility);
-	if (WeaponTraceHit.bBlockingHit)
+	GetWorld()->LineTraceSingleByChannel(OutHitResult, WeaponTraceStart, WeaponTraceEnd, ECollisionChannel::ECC_Visibility);
+	if (!OutHitResult.bBlockingHit)
 	{
-		OutBeamLocation = WeaponTraceHit.Location;
-		return true;
+		OutHitResult.Location = OutBeamLocation;
+		return false;
 	}
-	return false;
+	return true;
 
 	/*/
 
