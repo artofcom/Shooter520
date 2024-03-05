@@ -2,6 +2,7 @@
 
 
 #include "ShooterCharacter.h"
+#include "Enermy.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/characterMovementComponent.h"
@@ -22,6 +23,7 @@
 #include <utility>
 #include "Ammo.h"
 #include "BulletHitInterface.h"
+#include "Enermy.h"
 
 //#include <future>
 
@@ -602,6 +604,18 @@ void AShooterCharacter::SendBullet()
 				if(BulletHitInterface != NULL)
 				{
 					BulletHitInterface->BulletHit_Implementation(BeamHitResult);
+				}
+
+				AEnermy* HitEnemy = Cast<AEnermy>(BeamHitResult.GetActor());
+				if(HitEnemy != NULL)
+				{
+					if(BeamHitResult.BoneName.ToString() == HitEnemy->GetHeadBone())
+						UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), EquippedWeapon->GetHeadShotDamage(), GetController(), this, UDamageType::StaticClass() );
+					
+					else 
+						UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), EquippedWeapon->GetDamage(), GetController(), this, UDamageType::StaticClass() );
+				
+					UE_LOG(LogTemp, Warning, TEXT("Hit Component : %s"), *BeamHitResult.BoneName.ToString());
 				}
 			}
 			else 

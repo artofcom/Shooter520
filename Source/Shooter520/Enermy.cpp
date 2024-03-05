@@ -7,7 +7,9 @@
 #include "particles/particleSystemComponent.h"
 
 // Sets default values
-AEnermy::AEnermy()
+AEnermy::AEnermy() : 
+	Health(100.0f), 
+	MaxHealth(100.0f)
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -48,4 +50,14 @@ void AEnermy::BulletHit_Implementation(FHitResult HitResult)
 	{
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, HitResult.Location, FRotator(.0f), true);
 	}
+}
+
+float AEnermy::TakeDamage(float DamageAmount, FDamageEvent const & DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	if(Health-DamageAmount <= .0f)
+		Health = .0f;
+	else 
+		Health -= DamageAmount;
+	
+	return DamageAmount;
 }
