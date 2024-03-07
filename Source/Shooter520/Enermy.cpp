@@ -2,6 +2,7 @@
 
 
 #include "Enermy.h"
+#include "GruxAnimInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
 #include "particles/particleSystemComponent.h"
@@ -53,12 +54,16 @@ void AEnermy::BulletHit_Implementation(FHitResult HitResult)
 	}
 
 	ShowHealthBar();
+	PlayHitMontage(FName("HitReactFront"));
 }
 
 float AEnermy::TakeDamage(float DamageAmount, FDamageEvent const & DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
 	if(Health-DamageAmount <= .0f)
+	{
 		Health = .0f;
+		Die();
+	}
 	else 
 		Health -= DamageAmount;
 	
@@ -69,4 +74,20 @@ void AEnermy::ShowHealthBar_Implementation()
 {
 	GetWorldTimerManager().ClearTimer(HealthBarTimer);
 	GetWorldTimerManager().SetTimer(HealthBarTimer, this, &AEnermy::HideHealthBar, HealthBarDisplayTime);
+}
+
+void AEnermy::Die()
+{
+	HideHealthBar();
+}
+
+void AEnermy::PlayHitMontage(FName Section, float PlayRate)
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+	if(AnimInstance)
+	{
+		AnimInstance->Montage_Play(HitMontage, PlayRate);
+		AnimInstance->Montage_JumpToSection(Section, HitMontage);
+	}
 }
