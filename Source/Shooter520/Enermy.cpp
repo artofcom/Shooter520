@@ -6,12 +6,17 @@
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundCue.h"
 #include "particles/particleSystemComponent.h"
+#include "Blueprint/UserWidget.h"
 
 // Sets default values
 AEnermy::AEnermy() : 
 	Health(100.0f), 
 	MaxHealth(100.0f), 
-	HealthBarDisplayTime(4.0f)
+	HealthBarDisplayTime(4.0f), 
+	HitReactTimeMin(0.5f), 
+	HitReactTimeMax(3.0f),
+	bCanHitReact(true), 
+	HitNumberDestroyTime(1.5f)
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -83,11 +88,38 @@ void AEnermy::Die()
 
 void AEnermy::PlayHitMontage(FName Section, float PlayRate)
 {
-	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
-
-	if(AnimInstance)
+	if(bCanHitReact)
 	{
-		AnimInstance->Montage_Play(HitMontage, PlayRate);
-		AnimInstance->Montage_JumpToSection(Section, HitMontage);
+		UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+
+		if(AnimInstance)
+		{
+			AnimInstance->Montage_Play(HitMontage, PlayRate);
+			AnimInstance->Montage_JumpToSection(Section, HitMontage);
+		}
+		bCanHitReact = false;
+		const float HitReactTime = FMath::FRandRange(HitReactTimeMin, HitReactTimeMax);
+		GetWorldTimerManager().SetTimer(HitReactTimer, this, &AEnermy::ResetHitReactTimer, HitReactTime);
 	}
+}
+
+void AEnermy::ResetHitReactTimer()
+{
+	bCanHitReact = true;
+}
+
+void AEnermy::StoreHitNumber(UUserWidget* HitNumber, FVector Location)
+{
+	HitNumbers.Add(HitNumber, Location);
+
+	FTimerHandle HitNumberTimer;
+	FTimerDelegate HitNumberDelegate;
+	HitNumberDelegate.BindUFunction(this, FName("DestroyHitNumber"), HitNumber);
+	GetWorld()->GetTimerManager().SetTimer(HitNumberTimer, HitNumberDelegate, HitNumberDestroyTime, false);
+}
+
+void AEnermy::DestroyHitNumber(UUserWidget* HitNumber)
+{
+	HitNumbers.Remove(HitNumber);
+	HitNumber->RemoveFromParent();
 }

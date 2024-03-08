@@ -609,12 +609,16 @@ void AShooterCharacter::SendBullet()
 				AEnermy* HitEnemy = Cast<AEnermy>(BeamHitResult.GetActor());
 				if(HitEnemy != NULL)
 				{
+					int32 Damage = 0;
 					if(BeamHitResult.BoneName.ToString() == HitEnemy->GetHeadBone())
-						UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), EquippedWeapon->GetHeadShotDamage(), GetController(), this, UDamageType::StaticClass() );
-					
+						Damage = EquippedWeapon->GetHeadShotDamage();
+						
 					else 
-						UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), EquippedWeapon->GetDamage(), GetController(), this, UDamageType::StaticClass() );
-				
+						Damage = EquippedWeapon->GetDamage();
+					
+					UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), Damage, GetController(), this, UDamageType::StaticClass() );
+					HitEnemy->ShowHitNumber(Damage, BeamHitResult.Location);
+
 					UE_LOG(LogTemp, Warning, TEXT("Hit Component : %s"), *BeamHitResult.BoneName.ToString());
 				}
 			}
