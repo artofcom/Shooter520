@@ -39,6 +39,8 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void DestroyHitNumber(UUserWidget* HitNumber);
 
+	void UpdateHitNumbers();
+
 private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Combat, meta=(AllowPrivateAccess="true"))
@@ -96,5 +98,5 @@ public:
 	FORCEINLINE FString GetHeadBone() const { return HeadBone; }
 
 	UFUNCTION(BlueprintImplementableEvent)
-	void ShowHitNumber(int32 Damage, FVector HitLocation);
+	void ShowHitNumber(int32 Damage, FVector HitLocation, bool bHeadShot);
 };

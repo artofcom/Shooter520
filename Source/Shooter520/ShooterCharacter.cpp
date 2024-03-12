@@ -610,14 +610,20 @@ void AShooterCharacter::SendBullet()
 				if(HitEnemy != NULL)
 				{
 					int32 Damage = 0;
+					bool bHeadShot;
 					if(BeamHitResult.BoneName.ToString() == HitEnemy->GetHeadBone())
+					{
 						Damage = EquippedWeapon->GetHeadShotDamage();
-						
+						bHeadShot = true;
+					}	
 					else 
+					{
 						Damage = EquippedWeapon->GetDamage();
+						bHeadShot = false;
+					}
 					
 					UGameplayStatics::ApplyDamage(BeamHitResult.GetActor(), Damage, GetController(), this, UDamageType::StaticClass() );
-					HitEnemy->ShowHitNumber(Damage, BeamHitResult.Location);
+					HitEnemy->ShowHitNumber(Damage, BeamHitResult.Location, bHeadShot);
 
 					UE_LOG(LogTemp, Warning, TEXT("Hit Component : %s"), *BeamHitResult.BoneName.ToString());
 				}

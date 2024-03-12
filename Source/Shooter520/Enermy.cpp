@@ -37,6 +37,7 @@ void AEnermy::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	UpdateHitNumbers();
 }
 
 // Called to bind functionality to input
@@ -122,4 +123,16 @@ void AEnermy::DestroyHitNumber(UUserWidget* HitNumber)
 {
 	HitNumbers.Remove(HitNumber);
 	HitNumber->RemoveFromParent();
+}
+
+void AEnermy::UpdateHitNumbers()
+{
+	for(auto& HitPair : HitNumbers)
+	{
+		UUserWidget* HitNumber = HitPair.Key;
+		const FVector Location = HitPair.Value;
+		FVector2D ScreenPosition;
+		UGameplayStatics::ProjectWorldToScreen(GetWorld()->GetFirstPlayerController(), Location, ScreenPosition);
+		HitNumber->SetPositionInViewport(ScreenPosition);
+	}
 }
