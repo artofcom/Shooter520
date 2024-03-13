@@ -7,6 +7,10 @@
 #include "Sound/SoundCue.h"
 #include "particles/particleSystemComponent.h"
 #include "Blueprint/UserWidget.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "DrawDebugHelpers.h"
+#include "EnemyController.h"
+#include "behaviorTree/BlackboardComponent.h"
 
 // Sets default values
 AEnermy::AEnermy() : 
@@ -29,7 +33,18 @@ void AEnermy::BeginPlay()
 	Super::BeginPlay();
 
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
-	
+
+	EnemyController = Cast<AEnemyController>(GetController());
+
+	const FVector WorldPatrolPoint = UKismetMathLibrary::TransformLocation(GetActorTransform(), PatrolPoint);
+	DrawDebugSphere(GetWorld(), WorldPatrolPoint, 25.0f, 12, FColor::Red, true);
+
+	if(EnemyController)
+	{
+		EnemyController->GetBlackboardComponent()->SetValueAsVector(TEXT("PatrolPoint"), WorldPatrolPoint);
+		EnemyController->RunBehaviorTree(BehaviorTree);
+	}
+
 }
 
 // Called every frame
