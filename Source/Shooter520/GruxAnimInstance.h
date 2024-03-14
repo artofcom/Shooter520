@@ -12,6 +12,18 @@
 UCLASS()
 class SHOOTER520_API UGruxAnimInstance : public UAnimInstance
 {
+public:
+
 	GENERATED_BODY()
+
+	UFUNCTION(BlueprintCallable)
+	void UpdateAnimationProperties(float DeltatTime);
+
+private:
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Movement, meta=(AllowPrivateAccess="true"))
+	float Speed;
 	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
+	class AEnermy* Enemy;
 };
