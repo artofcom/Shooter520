@@ -11,6 +11,8 @@
 #include "DrawDebugHelpers.h"
 #include "EnemyController.h"
 #include "behaviorTree/BlackboardComponent.h"
+#include "Components/SphereComponent.h"
+#include "ShooterCharacter.h"
 
 // Sets default values
 AEnermy::AEnermy() : 
@@ -25,12 +27,17 @@ AEnermy::AEnermy() :
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	AgroSphere = CreateDefaultSubobject<USphereComponent>(TEXT("AgroSphere"));
+	AgroSphere->SetupAttachment(GetRootComponent());
+
 }
 
 // Called when the game starts or when spawned
 void AEnermy::BeginPlay()
 {
 	Super::BeginPlay();
+
+	AgroSphere->OnComponentBeginOverlap.AddDynamic(this, &AEnermy::AgroSphereOverlap);
 
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
 
@@ -152,4 +159,17 @@ void AEnermy::UpdateHitNumbers()
 		UGameplayStatics::ProjectWorldToScreen(GetWorld()->GetFirstPlayerController(), Location, ScreenPosition);
 		HitNumber->SetPositionInViewport(ScreenPosition);
 	}
+}
+
+void AEnermy::AgroSphereOverlap(UPrimitiveComponent* OverlappedComponent,
+		AActor* OtherActor, UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex, bool bFromSweep,
+		const FHitResult& SweepResult)
+{
+	if(OtherActor == NULL)
+		return;
+
+	auto Character = Cast<AShooterCharacter>(OtherActor);	
+	if(Character != NULL)
+		EnemyController->GetBlackboardComponent()->SetValueAsObject(TEXT("Target"), Character);
 }
