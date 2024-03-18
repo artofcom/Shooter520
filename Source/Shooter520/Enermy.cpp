@@ -13,6 +13,7 @@
 #include "behaviorTree/BlackboardComponent.h"
 #include "Components/SphereComponent.h"
 #include "ShooterCharacter.h"
+#include "Components/CapsuleComponent.h"
 
 // Sets default values
 AEnermy::AEnermy() : 
@@ -22,7 +23,13 @@ AEnermy::AEnermy() :
 	HitReactTimeMin(0.5f), 
 	HitReactTimeMax(3.0f),
 	bCanHitReact(true), 
-	HitNumberDestroyTime(1.5f)
+	HitNumberDestroyTime(1.5f), 
+	bStunned(false), 
+	StunChance(0.5f),
+	AttackLFast(TEXT("AttackLFast")),
+	AttackRFast(TEXT("AttackRFast")),
+	AttackL(TEXT("AttackL")),
+	AttackR(TEXT("AttackR"))
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -30,6 +37,8 @@ AEnermy::AEnermy() :
 	AgroSphere = CreateDefaultSubobject<USphereComponent>(TEXT("AgroSphere"));
 	AgroSphere->SetupAttachment(GetRootComponent());
 
+	CombatRangeSphere = CreateDefaultSubobject<USphereComponent>(TEXT("CombatRangeSphere"));
+	CombatRangeSphere->SetupAttachment(GetRootComponent());
 }
 
 // Called when the game starts or when spawned
@@ -38,8 +47,12 @@ void AEnermy::BeginPlay()
 	Super::BeginPlay();
 
 	AgroSphere->OnComponentBeginOverlap.AddDynamic(this, &AEnermy::AgroSphereOverlap);
+	CombatRangeSphere->OnComponentBeginOverlap.AddDynamic(this, &AEnermy::CombatRangeOverlap);
+	CombatRangeSphere->OnComponentEndOverlap.AddDynamic(this, &AEnermy::CombatRangeEndOverlap);
 
 	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Visibility, ECollisionResponse::ECR_Block);
+	GetMesh()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
+	GetCapsuleComponent()->SetCollisionResponseToChannel(ECollisionChannel::ECC_Camera, ECollisionResponse::ECR_Ignore);
 
 	EnemyController = Cast<AEnemyController>(GetController());
 
@@ -54,6 +67,13 @@ void AEnermy::BeginPlay()
 		EnemyController->GetBlackboardComponent()->SetValueAsVector(TEXT("PatrolPoint2"), WorldPatrolPoint2);
 		EnemyController->RunBehaviorTree(BehaviorTree);
 	}
+}
+
+void AEnermy::SetStunned(bool Stunned)
+{
+	bStunned = Stunned;
+	if(EnemyController)
+		EnemyController->GetBlackboardComponent()->SetValueAsBool(TEXT("Stunned"), bStunned);
 }
 
 // Called every frame
@@ -84,7 +104,13 @@ void AEnermy::BulletHit_Implementation(FHitResult HitResult)
 	}
 
 	ShowHealthBar();
-	PlayHitMontage(FName("HitReactFront"));
+
+	const float Stunned = FMath::FRandRange(.0f, 1.0f);
+	if(Stunned <= StunChance)
+	{
+		PlayHitMontage(FName("HitReactFront"));
+		SetStunned(true);
+	}
 }
 
 float AEnermy::TakeDamage(float DamageAmount, FDamageEvent const & DamageEvent, AController* EventInstigator, AActor* DamageCauser)
@@ -125,6 +151,28 @@ void AEnermy::PlayHitMontage(FName Section, float PlayRate)
 		bCanHitReact = false;
 		const float HitReactTime = FMath::FRandRange(HitReactTimeMin, HitReactTimeMax);
 		GetWorldTimerManager().SetTimer(HitReactTimer, this, &AEnermy::ResetHitReactTimer, HitReactTime);
+	}
+}
+
+void AEnermy::PlayAttackMontage(FName Section, float PlayRate)
+{
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if(AnimInstance && AttackMontage)
+	{
+		AnimInstance->Montage_Play(AttackMontage, PlayRate);
+		AnimInstance->Montage_JumpToSection(Section, AttackMontage);
+	}
+}
+
+FName AEnermy::GetAttackSectionName()
+{
+	const int32 Section = FMath::RandRange(1, 4);
+	switch(Section)
+	{
+	case 1:		return AttackLFast;
+	case 2: 	return AttackRFast;
+	case 3: 	return AttackL;
+	default: 	return AttackR;
 	}
 }
 
@@ -172,4 +220,35 @@ void AEnermy::AgroSphereOverlap(UPrimitiveComponent* OverlappedComponent,
 	auto Character = Cast<AShooterCharacter>(OtherActor);	
 	if(Character != NULL)
 		EnemyController->GetBlackboardComponent()->SetValueAsObject(TEXT("Target"), Character);
+}
+
+
+void AEnermy::CombatRangeOverlap(UPrimitiveComponent* OverlappedComponent,
+		AActor* OtherActor, UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex, bool bFromSweep,
+		const FHitResult& SweepResult)
+{
+	if(OtherActor == NULL)	return;
+	auto ShooterCharacter = Cast<AShooterCharacter>(OtherActor);
+	if(ShooterCharacter == NULL)
+		return;
+
+	bInAttackRange = true;
+	if(EnemyController)
+		EnemyController->GetBlackboardComponent()->SetValueAsBool(TEXT("InAttackRange"), bInAttackRange);
+}
+
+	
+void AEnermy::CombatRangeEndOverlap(UPrimitiveComponent* OverlappedComponent,
+	AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	int32 OtherBodyIndex)
+{
+	if(OtherActor == NULL)	return;
+	auto ShooterCharacter = Cast<AShooterCharacter>(OtherActor);
+	if(ShooterCharacter == NULL)
+		return;
+
+	bInAttackRange = false;
+	if(EnemyController)
+		EnemyController->GetBlackboardComponent()->SetValueAsBool(TEXT("InAttackRange"), bInAttackRange);
 }

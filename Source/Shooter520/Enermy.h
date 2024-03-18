@@ -47,6 +47,26 @@ protected:
 		int32 OtherBodyIndex, bool bFromSweep,
 		const FHitResult& SweepResult);
 
+	UFUNCTION(BlueprintCallable)
+	void SetStunned(bool Stunned);
+
+	UFUNCTION()
+	void CombatRangeOverlap(UPrimitiveComponent* OverlappedComponent,
+		AActor* OtherActor, UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex, bool bFromSweep,
+		const FHitResult& SweepResult);
+
+	UFUNCTION()
+	void CombatRangeEndOverlap(UPrimitiveComponent* OverlappedComponent,
+		AActor* OtherActor, UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex);
+
+	UFUNCTION(BlueprintCallable)
+	void PlayAttackMontage(FName Section, float PlayRate = 1.0f);
+
+	UFUNCTION(BlueprintPure)
+	FName GetAttackSectionName();
+
 private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Combat, meta=(AllowPrivateAccess="true"))
@@ -102,6 +122,28 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Combat, meta=(AllowPrivateAccess="true"))
 	class USphereComponent* AgroSphere;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category=Combat, meta=(AllowPrivateAccess="true"))
+	bool bStunned;
+
+	// 0 ~ 1.0
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Combat, meta=(AllowPrivateAccess="true"))
+	float StunChance;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category=Combat, meta=(AllowPrivateAccess="true"))
+	bool bInAttackRange;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Combat, meta=(AllowPrivateAccess="true"))
+	USphereComponent* CombatRangeSphere;
+
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Combat, meta=(AllowPrivateAccess="true"))
+	UAnimMontage* AttackMontage;
+
+	FName AttackLFast;
+	FName AttackRFast;
+	FName AttackL;
+	FName AttackR;
 
 public:	
 	// Called every frame
