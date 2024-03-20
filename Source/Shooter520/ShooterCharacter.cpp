@@ -94,7 +94,9 @@ AShooterCharacter::AShooterCharacter():
 
 	PickupSoundResetTime(0.2f),
 	EquipSoundResetTime(0.2), 
-	HighlightedSlot(-1)
+	HighlightedSlot(-1), 
+	Health(100.0f), 
+	MaxHealth(100.0f)
 {
 
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
@@ -491,6 +493,16 @@ void AShooterCharacter::LookUp(float Value)
 		LookUpScaleFactor = MouseHipLookUpRate;
 
 	APawn::AddControllerPitchInput(Value * LookUpScaleFactor);
+}
+
+float AShooterCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
+{
+	if(Health - DamageAmount < .0f)
+		Health = .0f;
+	else 
+		Health -= DamageAmount;
+
+	return DamageAmount;
 }
 
 void AShooterCharacter::FireButtonPressed()
