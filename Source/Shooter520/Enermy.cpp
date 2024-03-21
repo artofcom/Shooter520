@@ -281,7 +281,13 @@ void AEnermy::DoDamage(AActor* Victim)
 
 	auto Character = Cast<AShooterCharacter>(Victim);
 	if(Character)
+	{
 		UGameplayStatics::ApplyDamage(Character, BaseDamage, EnemyController, this, UDamageType::StaticClass());
+		if(Character->GetMeleeImpactSound())
+		{
+			UGameplayStatics::PlaySoundAtLocation(this, Character->GetMeleeImpactSound(), GetActorLocation());
+		}
+	}
 }
 
 void AEnermy::OnLeftWeaponOverlap(UPrimitiveComponent* OverlappedComponent,
