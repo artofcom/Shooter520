@@ -84,7 +84,8 @@ protected:
 	UFUNCTION(BlueprintCallable) void ActivateRightWeapon();
 	UFUNCTION(BlueprintCallable) void DeactivateRightWeapon();
 
-	void DoDamage(AActor* victim);
+	void DoDamage(class AShooterCharacter* victim);
+	void SpawnBlood(AShooterCharacter* Victim, FName SocketName);
 
 private:
 
@@ -172,6 +173,12 @@ private:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Combat, meta=(AllowPrivateAccess="true"))
 	float BaseDamage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Combat, meta=(AllowPrivateAccess="true"))
+	FName LeftWeaponSocket;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Combat, meta=(AllowPrivateAccess="true"))
+	FName RightWeaponSocket;
 
 public:	
 	// Called every frame
