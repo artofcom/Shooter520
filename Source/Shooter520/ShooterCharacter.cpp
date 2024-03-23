@@ -96,7 +96,8 @@ AShooterCharacter::AShooterCharacter():
 	EquipSoundResetTime(0.2), 
 	HighlightedSlot(-1), 
 	Health(100.0f), 
-	MaxHealth(100.0f)
+	MaxHealth(100.0f),
+	StunChance(0.25f)
 {
 
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
@@ -434,6 +435,9 @@ void AShooterCharacter::ExchangeInventoryItems(int32 CurrentItemIndex, int32 New
 
 void AShooterCharacter::FinishEquipping()
 {
+	if(CombatState == ECombatState::ECS_Stunned)
+		return;
+
 	CombatState = ECombatState::ECS_Unoccupied;
 	if(bAimingButtonPressed)
 		Aim();
@@ -519,13 +523,15 @@ void AShooterCharacter::StartFireTimer()
 	if(EquippedWeapon == NULL)
 		return;
 
-
 	CombatState = ECombatState::ECS_FireTimerInProgress;
 
 	GetWorldTimerManager().SetTimer(AutoFireTimer, this, &AShooterCharacter::AutoFireReset, EquippedWeapon->GetAutoFireRate());
 }
 void AShooterCharacter::AutoFireReset()
 {
+	if(CombatState == ECombatState::ECS_Stunned)
+		return;
+
 	CombatState = ECombatState::ECS_Unoccupied;
 	if(EquippedWeapon == NULL)	return;
 
@@ -582,12 +588,32 @@ void AShooterCharacter::MoveForward(float Value)
 		AddMovementInput(Direction, Value);
 	}
 }
+
 void AShooterCharacter::PlayFireSound()
 {
 	// Making firing sound.
 	if (EquippedWeapon->GetFireSound())
 		UGameplayStatics::PlaySound2D(this, EquippedWeapon->GetFireSound());
 }
+
+void AShooterCharacter::EndStun()
+{
+	CombatState = ECombatState::ECS_Unoccupied;
+	if(bAimingButtonPressed)
+		Aim();
+}
+
+void AShooterCharacter::Stun()
+{
+	CombatState = ECombatState::ECS_Stunned;
+
+	UAnimInstance* AnimInst = GetMesh()->GetAnimInstance();
+	if(AnimInst && HitReactMontage)
+	{
+		AnimInst->Montage_Play(HitReactMontage);
+	}
+}
+
 void AShooterCharacter::SendBullet()
 {
 	// Send Bullet.
@@ -736,7 +762,8 @@ void AShooterCharacter::FireWeapon()
 void AShooterCharacter::AimingButtonPressed()
 {
 	bAimingButtonPressed = true;
-	if(CombatState != ECombatState::ECS_Reloading && CombatState != ECombatState::ECS_Equipping)
+	if(CombatState != ECombatState::ECS_Reloading && CombatState != ECombatState::ECS_Equipping && 
+	   CombatState != ECombatState::ECS_Stunned)
 		Aim();
 }
 void AShooterCharacter::AimingButtonReleased()
@@ -1098,6 +1125,9 @@ void AShooterCharacter::ReloadWeapon()
 
 void AShooterCharacter::FinishReloading()
 {
+	if(CombatState == ECombatState::ECS_Stunned)
+		return;
+
 	CombatState = ECombatState::ECS_Unoccupied;
 
 	if(bAimingButtonPressed)

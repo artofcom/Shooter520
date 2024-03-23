@@ -14,6 +14,7 @@ enum class ECombatState : uint8
 	ECS_FireTimerInProgress UMETA(DisplayName="FireTimerInProgress"),
 	ECS_Reloading UMETA(DisplayName="Reloading"),
 	ECS_Equipping UMETA(DisplayName="Equipping"),
+	ECS_Stunned UMETA(DisplayName="Stunned"),
 	
 	ECS_MAX UMETA(DisplayName="Default MAX")
 };
@@ -147,6 +148,9 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	EPhysicalSurface GetSurfaceType();	
+
+	UFUNCTION(BlueprintCallable)
+	void EndStun();
 
 
 private:
@@ -386,6 +390,12 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
 	UParticleSystem* BloodParticles;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	UAnimMontage* HitReactMontage;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Combat, meta = (AllowPrivateAccess = "true"))
+	float StunChance;
+
 public:
 
 	FORCEINLINE USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
@@ -424,4 +434,7 @@ public:
 	FORCEINLINE AWeapon* GetEquippedWeapon() const { return EquippedWeapon; }
 	FORCEINLINE USoundCue* GetMeleeImpactSound() const { return MeleeImpactSound; }
 	FORCEINLINE UParticleSystem* GetBloodParticles() const { return BloodParticles; }
+
+	void Stun();
+	FORCEINLINE float GetStunChance() const { return StunChance; }
 };
