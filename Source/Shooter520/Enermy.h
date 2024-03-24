@@ -89,6 +89,8 @@ protected:
 
 	void StunCharacter(AShooterCharacter* Victim);
 
+	void ResetCanAttack();
+
 private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Combat, meta=(AllowPrivateAccess="true"))
@@ -181,6 +183,14 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Combat, meta=(AllowPrivateAccess="true"))
 	FName RightWeaponSocket;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category=Combat, meta=(AllowPrivateAccess="true"))
+	bool bCanAttack;
+
+	FTimerHandle AttackWaitTimer;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category=Combat, meta=(AllowPrivateAccess="true"))
+	float AttackWaitTime;
 
 public:	
 	// Called every frame

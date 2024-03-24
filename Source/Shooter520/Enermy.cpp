@@ -35,7 +35,9 @@ AEnermy::AEnermy() :
 	AttackR(TEXT("AttackR")), 
 	BaseDamage(20.0f),
 	LeftWeaponSocket(TEXT("FX_Trail_L_01")), 
-	RightWeaponSocket(TEXT("FX_Trail_R_01")) 
+	RightWeaponSocket(TEXT("FX_Trail_R_01")),
+	bCanAttack(true),
+	AttackWaitTime(1.0f)
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -91,6 +93,7 @@ void AEnermy::BeginPlay()
 	{
 		EnemyController->GetBlackboardComponent()->SetValueAsVector(TEXT("PatrolPoint"), WorldPatrolPoint);
 		EnemyController->GetBlackboardComponent()->SetValueAsVector(TEXT("PatrolPoint2"), WorldPatrolPoint2);
+		EnemyController->GetBlackboardComponent()->SetValueAsBool(FName("CanAttack"), true);
 		EnemyController->RunBehaviorTree(BehaviorTree);
 	}
 }
@@ -141,6 +144,9 @@ void AEnermy::BulletHit_Implementation(FHitResult HitResult)
 
 float AEnermy::TakeDamage(float DamageAmount, FDamageEvent const & DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
+	if(EnemyController)
+		EnemyController->GetBlackboardComponent()->SetValueAsObject(FName("Target"), DamageCauser);
+
 	if(Health-DamageAmount <= .0f)
 	{
 		Health = .0f;
@@ -188,6 +194,20 @@ void AEnermy::PlayAttackMontage(FName Section, float PlayRate)
 		AnimInstance->Montage_Play(AttackMontage, PlayRate);
 		AnimInstance->Montage_JumpToSection(Section, AttackMontage);
 	}
+	
+	bCanAttack = false;
+	GetWorldTimerManager().SetTimer(AttackWaitTimer, this, &AEnermy::ResetCanAttack, AttackWaitTime);
+
+	if(EnemyController)
+		EnemyController->GetBlackboardComponent()->SetValueAsBool(FName("CanAttack"), bCanAttack);
+}
+
+
+void AEnermy::ResetCanAttack()
+{
+	bCanAttack = true;
+	if(EnemyController)
+		EnemyController->GetBlackboardComponent()->SetValueAsBool(FName("CanAttack"), bCanAttack);
 }
 
 FName AEnermy::GetAttackSectionName()
