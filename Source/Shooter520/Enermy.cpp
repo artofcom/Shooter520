@@ -37,7 +37,9 @@ AEnermy::AEnermy() :
 	LeftWeaponSocket(TEXT("FX_Trail_L_01")), 
 	RightWeaponSocket(TEXT("FX_Trail_R_01")),
 	bCanAttack(true),
-	AttackWaitTime(1.0f)
+	AttackWaitTime(1.0f), 
+	bDying(false),
+	DeathTime(1.0f)
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -132,6 +134,8 @@ void AEnermy::BulletHit_Implementation(FHitResult HitResult)
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ImpactParticles, HitResult.Location, FRotator(.0f), true);
 	}
 
+	if(bDying)	return;
+
 	ShowHealthBar();
 
 	const float Stunned = FMath::FRandRange(.0f, 1.0f);
@@ -144,6 +148,8 @@ void AEnermy::BulletHit_Implementation(FHitResult HitResult)
 
 float AEnermy::TakeDamage(float DamageAmount, FDamageEvent const & DamageEvent, AController* EventInstigator, AActor* DamageCauser)
 {
+	if(bDying)	return .0f;
+
 	if(EnemyController)
 		EnemyController->GetBlackboardComponent()->SetValueAsObject(FName("Target"), DamageCauser);
 
@@ -164,9 +170,35 @@ void AEnermy::ShowHealthBar_Implementation()
 	GetWorldTimerManager().SetTimer(HealthBarTimer, this, &AEnermy::HideHealthBar, HealthBarDisplayTime);
 }
 
+void AEnermy::FinishDeath()
+{
+	GetMesh()->bPauseAnims = true;
+	GetWorldTimerManager().SetTimer(DeathTimer, this, &AEnermy::DestroyEnemy, DeathTime);	
+}
+
+void AEnermy::DestroyEnemy()
+{
+	Destroy();
+}
+
 void AEnermy::Die()
 {
+	if(bDying)	return;
+	bDying = true;
+
 	HideHealthBar();
+
+	UAnimInstance* AnimInst = GetMesh()->GetAnimInstance();
+	if(AnimInst && DeathMontage)
+	{
+		AnimInst->Montage_Play(DeathMontage);
+	}
+
+	if(EnemyController)
+	{
+		EnemyController->GetBlackboardComponent()->SetValueAsBool(FName("Dead"), true);
+		EnemyController->StopMovement();
+	}
 }
 
 void AEnermy::PlayHitMontage(FName Section, float PlayRate)

@@ -24,6 +24,8 @@
 #include "Ammo.h"
 #include "BulletHitInterface.h"
 #include "Enermy.h"
+#include "EnemyController.h"
+#include "BehaviorTree/BlackboardComponent.h"
 
 //#include <future>
 
@@ -499,10 +501,39 @@ void AShooterCharacter::LookUp(float Value)
 	APawn::AddControllerPitchInput(Value * LookUpScaleFactor);
 }
 
+void AShooterCharacter::Die()
+{
+	UAnimInstance* AnimInst = GetMesh()->GetAnimInstance();
+	if(AnimInst && DeathMontage)
+	{
+		AnimInst->Montage_Play(DeathMontage);
+	}
+}
+
+void AShooterCharacter::FinishDeath()
+{
+	GetMesh()->bPauseAnims = true;
+
+	APlayerController* PC = UGameplayStatics::GetPlayerController(this, 0);
+	if(PC)
+	{
+		DisableInput(PC);
+	}
+}
+
 float AShooterCharacter::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser)
 {
 	if(Health - DamageAmount < .0f)
+	{
 		Health = .0f;
+		Die();
+
+		auto EnemyController = Cast<AEnemyController>(EventInstigator);
+		if(EnemyController)
+		{
+			EnemyController->GetBlackboardComponent()->SetValueAsBool(FName(TEXT("CharacterDead")), true);
+		}
+	}
 	else 
 		Health -= DamageAmount;
 
@@ -605,6 +636,8 @@ void AShooterCharacter::EndStun()
 
 void AShooterCharacter::Stun()
 {
+	if(Health <= .0f)	return;
+
 	CombatState = ECombatState::ECS_Stunned;
 
 	UAnimInstance* AnimInst = GetMesh()->GetAnimInstance();
